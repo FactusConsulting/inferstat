@@ -2,6 +2,14 @@ using System.Reflection;
 using Inferstat;
 using Spectre.Console.Cli;
 
+// --help-ai as a global flag, in addition to the help-ai subcommand —
+// matches the convention from the ai-ops.dk blog post on agent-friendly CLIs.
+if (args.Any(a => a == "--help-ai"))
+{
+    Console.WriteLine(AgentGuidance.Text);
+    return 0;
+}
+
 var version = Assembly.GetExecutingAssembly()
     .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
     ?.InformationalVersion ?? "0.0.0-dev";

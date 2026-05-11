@@ -85,11 +85,9 @@ public sealed class MetricsCommand : AsyncCommand<EndpointSettings>
     }
 }
 
-public sealed class HelpAiCommand : Command
+public static class AgentGuidance
 {
-    public override int Execute(CommandContext ctx)
-    {
-        Console.WriteLine("""
+    public const string Text = """
             inferstat — guidance for AI agents
 
             WHEN TO USE
@@ -126,7 +124,14 @@ public sealed class HelpAiCommand : Command
               inferstat health http://infer:8080 --json | jq .server_kind
               inferstat slots http://infer:8080 --json | jq '.busy,.total'
               inferstat metrics http://infer:8080 --json | jq '.metrics | with_entries(select(.key | startswith("vllm_")))'
-            """);
+            """;
+}
+
+public sealed class HelpAiCommand : Command
+{
+    public override int Execute(CommandContext ctx)
+    {
+        Console.WriteLine(AgentGuidance.Text);
         return 0;
     }
 }
