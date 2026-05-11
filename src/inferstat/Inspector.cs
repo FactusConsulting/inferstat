@@ -148,23 +148,28 @@ public static class Inspector
             using var res = await http.GetAsync($"{e}/metrics", ct);
             if (!res.IsSuccessStatusCode) return null;
             var text = await res.Content.ReadAsStringAsync(ct);
-            var dict = new Dictionary<string, double>();
-            foreach (var line in text.Split('\n'))
-            {
-                if (line.Length == 0 || line.StartsWith('#')) continue;
-                var idx = line.LastIndexOf(' ');
-                if (idx < 0) continue;
-                var key = line[..idx].Trim();
-                if (double.TryParse(line[(idx + 1)..].Trim(), System.Globalization.NumberStyles.Any,
-                    System.Globalization.CultureInfo.InvariantCulture, out var val))
-                    dict[key] = val;
-            }
-            return new MetricsResult(e, "prometheus-exposition", dict);
+            return new MetricsResult(e, "prometheus-exposition", ParsePrometheus(text));
         }
         catch { return null; }
     }
 
-    private static string? GuessFamily(string id)
+    internal static Dictionary<string, double> ParsePrometheus(string text)
+    {
+        var dict = new Dictionary<string, double>();
+        foreach (var line in text.Split('\n'))
+        {
+            if (line.Length == 0 || line.StartsWith('#')) continue;
+            var idx = line.LastIndexOf(' ');
+            if (idx < 0) continue;
+            var key = line[..idx].Trim();
+            if (double.TryParse(line[(idx + 1)..].Trim(), System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var val))
+                dict[key] = val;
+        }
+        return dict;
+    }
+
+    internal static string? GuessFamily(string id)
     {
         var lower = id.ToLowerInvariant();
         if (lower.Contains("gemma")) return "gemma";
@@ -177,7 +182,7 @@ public static class Inspector
         return null;
     }
 
-    private static string? GuessQuant(string id)
+    internal static string? GuessQuant(string id)
     {
         var lower = id.ToLowerInvariant();
         string[] quants = ["q2_k", "q3_k", "q4_0", "q4_1", "q4_k_s", "q4_k_m", "q4_k_l", "q5_0", "q5_k_s", "q5_k_m", "q5_k_l", "q6_k", "q8_0", "fp8", "bf16", "fp16"];
