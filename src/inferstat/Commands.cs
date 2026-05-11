@@ -101,6 +101,12 @@ public sealed class HelpAiCommand : Command
               All commands are read-only HTTP GET. No state mutation. Safe to call
               from a monitoring loop.
 
+            AUTHENTICATION
+              For secured endpoints (vLLM started with --api-key, gateways, etc.):
+                - Pass --api-key <token>, OR
+                - Set OPENAI_API_KEY in the environment (used as generic bearer token)
+              Local llama.cpp/Ollama instances typically need no authentication.
+
             PREFERRED PATTERNS
               - Use 'health' first to determine the server type (llama.cpp/vllm/ollama)
               - 'slots' is llama.cpp-specific; vLLM/Ollama will return 74

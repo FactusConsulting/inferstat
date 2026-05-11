@@ -51,6 +51,28 @@ if [ "$busy" -ge 8 ]; then echo "infer is at >80% capacity"; fi
 inferstat metrics http://infer:8000 --json | jq '.metrics | with_entries(select(.key | startswith("vllm_")))'
 ```
 
+## Authentication
+
+For endpoints that require a bearer token (vLLM started with `--api-key`, secured
+gateways, etc.), pass it via flag or environment variable. The flag wins:
+
+```sh
+# Flag-based
+inferstat health http://infer:8000 --api-key my-vllm-token
+
+# Environment variable (recommended for scripts/CI)
+export OPENAI_API_KEY=my-vllm-token
+inferstat models http://infer:8000
+inferstat slots http://infer:8000
+
+# Per-call without polluting env or shell history
+OPENAI_API_KEY=my-vllm-token inferstat metrics http://infer:8000
+```
+
+The env var is named `OPENAI_API_KEY` for consistency with llmprobe and the wider
+ecosystem — it's used as a generic bearer token, not OpenAI-specific. Local llama.cpp
+and Ollama instances usually don't need authentication.
+
 ## Exit codes
 
 | Code | Meaning |
