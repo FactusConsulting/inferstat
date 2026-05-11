@@ -1,11 +1,16 @@
+using System.Reflection;
 using Inferstat;
 using Spectre.Console.Cli;
+
+var version = Assembly.GetExecutingAssembly()
+    .GetCustomAttribute<AssemblyInformationalVersionAttribute>()
+    ?.InformationalVersion ?? "0.0.0-dev";
 
 var app = new CommandApp();
 app.Configure(config =>
 {
     config.SetApplicationName("inferstat");
-    config.SetApplicationVersion("0.1.0");
+    config.SetApplicationVersion(version);
     config.AddCommand<HealthCommand>("health")
         .WithDescription("Check server health and detect server type (llama.cpp / vLLM / Ollama).")
         .WithExample("health", "http://localhost:8080")
