@@ -114,13 +114,13 @@ public static class Inspector
         catch { return null; }
     }
 
-    public static async Task<SlotsResult?> SlotsAsync(HttpClient http, string endpoint, CancellationToken ct)
+    public static async Task<(SlotsResult? Result, int StatusCode)> SlotsAsync(HttpClient http, string endpoint, CancellationToken ct)
     {
         var e = Normalize(endpoint);
         try
         {
             using var res = await http.GetAsync($"{e}/slots", ct);
-            if (!res.IsSuccessStatusCode) return null;
+            if (!res.IsSuccessStatusCode) return (null, (int)res.StatusCode);
             var json = await res.Content.ReadAsStringAsync(ct);
             using var doc = JsonDocument.Parse(json);
             var list = new List<SlotInfo>();
@@ -135,22 +135,22 @@ public static class Inspector
                 list.Add(new SlotInfo(id, stateStr, null, processed, remaining, promptT));
             }
             var busy = list.Count(s => s.State == "processing");
-            return new SlotsResult(e, list.Count, busy, list.Count - busy, list.ToArray());
+            return (new SlotsResult(e, list.Count, busy, list.Count - busy, list.ToArray()), 200);
         }
-        catch { return null; }
+        catch { return (null, 0); }
     }
 
-    public static async Task<MetricsResult?> MetricsAsync(HttpClient http, string endpoint, CancellationToken ct)
+    public static async Task<(MetricsResult? Result, int StatusCode)> MetricsAsync(HttpClient http, string endpoint, CancellationToken ct)
     {
         var e = Normalize(endpoint);
         try
         {
             using var res = await http.GetAsync($"{e}/metrics", ct);
-            if (!res.IsSuccessStatusCode) return null;
+            if (!res.IsSuccessStatusCode) return (null, (int)res.StatusCode);
             var text = await res.Content.ReadAsStringAsync(ct);
-            return new MetricsResult(e, "prometheus-exposition", ParsePrometheus(text));
+            return (new MetricsResult(e, "prometheus-exposition", ParsePrometheus(text)), 200);
         }
-        catch { return null; }
+        catch { return (null, 0); }
     }
 
     internal static Dictionary<string, double> ParsePrometheus(string text)

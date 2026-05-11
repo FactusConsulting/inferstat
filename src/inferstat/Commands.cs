@@ -65,8 +65,20 @@ public sealed class SlotsCommand : AsyncCommand<EndpointSettings>
     {
         s.ApplyToRender();
         using var http = Inspector.CreateClient(s.ResolvedApiKey(), s.Timeout);
-        var r = await Inspector.SlotsAsync(http, s.Endpoint, default);
-        if (r == null) { Render.Error("slots endpoint unavailable", "llama.cpp exposes /slots. vLLM and Ollama do not."); return 74; }
+        var (r, status) = await Inspector.SlotsAsync(http, s.Endpoint, default);
+        if (r == null)
+        {
+            if (status == 401 || status == 403)
+            {
+                var hint = string.IsNullOrEmpty(s.ResolvedApiKey())
+                    ? "Endpoint requires authentication. Pass --api-key <token> or set OPENAI_API_KEY env var."
+                    : "Endpoint returned 401/403 — verify your API key is correct.";
+                Render.Error($"slots endpoint requires auth (HTTP {status})", hint);
+                return 78;
+            }
+            Render.Error($"slots endpoint unavailable (HTTP {status})", "llama.cpp exposes /slots when configured. vLLM and Ollama do not.");
+            return 74;
+        }
         Render.Slots(r);
         return 0;
     }
@@ -78,8 +90,20 @@ public sealed class MetricsCommand : AsyncCommand<EndpointSettings>
     {
         s.ApplyToRender();
         using var http = Inspector.CreateClient(s.ResolvedApiKey(), s.Timeout);
-        var r = await Inspector.MetricsAsync(http, s.Endpoint, default);
-        if (r == null) { Render.Error("metrics endpoint unavailable", "Try: inferstat health to identify the server type."); return 74; }
+        var (r, status) = await Inspector.MetricsAsync(http, s.Endpoint, default);
+        if (r == null)
+        {
+            if (status == 401 || status == 403)
+            {
+                var hint = string.IsNullOrEmpty(s.ResolvedApiKey())
+                    ? "Endpoint requires authentication. Pass --api-key <token> or set OPENAI_API_KEY env var."
+                    : "Endpoint returned 401/403 — verify your API key is correct.";
+                Render.Error($"metrics endpoint requires auth (HTTP {status})", hint);
+                return 78;
+            }
+            Render.Error($"metrics endpoint unavailable (HTTP {status})", "Try: inferstat health to identify the server type.");
+            return 74;
+        }
         Render.Metrics(r);
         return 0;
     }
