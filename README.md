@@ -20,9 +20,33 @@ inferstat help-ai                           # guidance for AI agents
 
 ## Install
 
+### Homebrew (macOS / Linux)
+
+```sh
+brew tap factusconsulting/tools
+brew install inferstat
+```
+
+The tap lives at [FactusConsulting/homebrew-tools](https://github.com/FactusConsulting/homebrew-tools); `inferstat` is bumped there automatically on every release.
+
+### Chocolatey (Windows, self-hosted feed)
+
+`inferstat` is published to a self-hosted Chocolatey feed on GitHub Pages (not the
+community repository). Add the source once, then install:
+
+```powershell
+choco source add -n=inferstat -s="https://factusconsulting.github.io/inferstat/chocolatey/index.json"
+choco install inferstat --source=inferstat -y
+```
+
+Upgrade with `choco upgrade inferstat --source=inferstat`. The package installs a
+single self-contained `inferstat.exe` and shims it onto your `PATH`.
+
+### Prebuilt binaries
+
 Download single-file AOT-compiled binaries from [Releases](https://github.com/FactusConsulting/inferstat/releases) — Linux x64/arm64, macOS x64/arm64, Windows x64. No runtime required.
 
-Or build from source:
+### Build from source
 
 ```sh
 git clone https://github.com/FactusConsulting/inferstat.git
