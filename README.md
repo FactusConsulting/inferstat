@@ -23,11 +23,11 @@ inferstat help-ai                           # guidance for AI agents
 ### Homebrew (macOS / Linux)
 
 ```sh
-brew tap factusconsulting/tools
+brew tap factusconsulting/tap
 brew install inferstat
 ```
 
-The tap lives at [FactusConsulting/homebrew-tools](https://github.com/FactusConsulting/homebrew-tools); `inferstat` is bumped there automatically on every release.
+The tap lives at [FactusConsulting/homebrew-tap](https://github.com/FactusConsulting/homebrew-tap); `inferstat` is bumped there automatically on every release.
 
 ### Chocolatey (Windows, self-hosted feed)
 
