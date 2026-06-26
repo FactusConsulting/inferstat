@@ -6,6 +6,8 @@ namespace Inferstat;
 
 public static class Inspector
 {
+    private const string LlamaCpp = "llama.cpp";
+
     public static HttpClient CreateClient(string? apiKey, TimeSpan timeout)
     {
         var c = new HttpClient { Timeout = timeout };
@@ -43,10 +45,10 @@ public static class Inspector
             {
                 var body = await res.Content.ReadAsStringAsync(ct);
                 if (body.Contains("\"status\"", StringComparison.OrdinalIgnoreCase))
-                    serverKind = "llama.cpp";
+                    serverKind = LlamaCpp;
             }
         }
-        catch { }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
 
         // /v1/models — any OpenAI-compatible server. Drives the "openai-compatible"
         // fallback (e.g. a LiteLLM gateway) and captures the served model for every
@@ -65,7 +67,7 @@ public static class Inspector
                     loadedModel = id.GetString();
             }
         }
-        catch { }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
 
         // /version — vLLM (and other FastAPI servers) expose {"version"} here.
         // Ollama does NOT (it uses /api/version), so this is purely a version-string
@@ -81,7 +83,7 @@ public static class Inspector
                     version = v.GetString();
             }
         }
-        catch { }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
 
         // /metrics prefix — the most reliable discriminator: vLLM emits `vllm:`
         // series, llama.cpp emits `llamacpp:` series.
@@ -92,10 +94,10 @@ public static class Inspector
             {
                 var body = await mres.Content.ReadAsStringAsync(ct);
                 if (body.Contains("vllm:", StringComparison.Ordinal)) serverKind = "vllm";
-                else if (body.Contains("llamacpp:", StringComparison.Ordinal)) serverKind = "llama.cpp";
+                else if (body.Contains("llamacpp:", StringComparison.Ordinal)) serverKind = LlamaCpp;
             }
         }
-        catch { }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
 
         // Ollama-specific: only Ollama serves /api/version.
         try
@@ -112,22 +114,22 @@ public static class Inspector
                 }
             }
         }
-        catch { }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
 
         // llama.cpp definitive: server_props + /props (the latter carries the model).
         try
         {
             using var pres = await http.GetAsync($"{e}/v1/internal/server_props", ct);
-            if (pres.IsSuccessStatusCode) serverKind = "llama.cpp";
+            if (pres.IsSuccessStatusCode) serverKind = LlamaCpp;
         }
-        catch { }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
 
         try
         {
             using var pres = await http.GetAsync($"{e}/props", ct);
             if (pres.IsSuccessStatusCode)
             {
-                serverKind = "llama.cpp";
+                serverKind = LlamaCpp;
                 var json = await pres.Content.ReadAsStringAsync(ct);
                 using var doc = JsonDocument.Parse(json);
                 if (doc.RootElement.TryGetProperty("default_generation_settings", out var dgs)
@@ -135,7 +137,7 @@ public static class Inspector
                     loadedModel = m.GetString();
             }
         }
-        catch { }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
 
         sw.Stop();
         var ok = status.HasValue && status.Value < 500;
