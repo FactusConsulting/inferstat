@@ -6,6 +6,8 @@ namespace Inferstat;
 
 public static class Inspector
 {
+    private const string LlamaCpp = "llama.cpp";
+
     public static HttpClient CreateClient(string? apiKey, TimeSpan timeout)
     {
         var c = new HttpClient { Timeout = timeout };
@@ -26,13 +28,15 @@ public static class Inspector
     {
         var e = Normalize(endpoint);
         var sw = Stopwatch.StartNew();
-        // Try llama.cpp /health first, then /v1/models for vLLM/Ollama
+        // Detect the server kind from the most specific signal available. Probes
+        // run weakest-first; a later, more-specific match overrides an earlier guess.
         string serverKind = "unknown";
         string? version = null;
         string? loadedModel = null;
         long? uptime = null;
         int? status = null;
 
+        // Liveness, plus a weak llama.cpp hint (its /health returns {"status": "ok"}).
         try
         {
             using var res = await http.GetAsync($"{e}/health", ct);
@@ -41,20 +45,33 @@ public static class Inspector
             {
                 var body = await res.Content.ReadAsStringAsync(ct);
                 if (body.Contains("\"status\"", StringComparison.OrdinalIgnoreCase))
-                    serverKind = "llama.cpp";
-                else if (body.Contains("\"version\"", StringComparison.OrdinalIgnoreCase))
-                    serverKind = "ollama";
+                    serverKind = LlamaCpp;
             }
         }
-        catch { }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
 
+        // /v1/models — any OpenAI-compatible server. Drives the "openai-compatible"
+        // fallback (e.g. a LiteLLM gateway) and captures the served model for every
+        // server kind. A 401/403 just means we can't read it without a key.
         try
         {
-            using var pres = await http.GetAsync($"{e}/v1/internal/server_props", ct);
-            if (pres.IsSuccessStatusCode) { serverKind = "llama.cpp"; }
+            using var lres = await http.GetAsync($"{e}/v1/models", ct);
+            if (lres.IsSuccessStatusCode)
+            {
+                if (serverKind == "unknown") serverKind = "openai-compatible";
+                var json = await lres.Content.ReadAsStringAsync(ct);
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("data", out var data)
+                    && data.ValueKind == JsonValueKind.Array && data.GetArrayLength() > 0
+                    && data[0].TryGetProperty("id", out var id))
+                    loadedModel = id.GetString();
+            }
         }
-        catch { }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
 
+        // /version — vLLM (and other FastAPI servers) expose {"version"} here.
+        // Ollama does NOT (it uses /api/version), so this is purely a version-string
+        // capture; the server *kind* is decided by the more specific probes below.
         try
         {
             using var vres = await http.GetAsync($"{e}/version", ct);
@@ -63,20 +80,56 @@ public static class Inspector
                 var json = await vres.Content.ReadAsStringAsync(ct);
                 using var doc = JsonDocument.Parse(json);
                 if (doc.RootElement.TryGetProperty("version", out var v))
+                    version = v.GetString();
+            }
+        }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
+
+        // /metrics prefix — the most reliable discriminator: vLLM emits `vllm:`
+        // series, llama.cpp emits `llamacpp:` series.
+        try
+        {
+            using var mres = await http.GetAsync($"{e}/metrics", ct);
+            if (mres.IsSuccessStatusCode)
+            {
+                var body = await mres.Content.ReadAsStringAsync(ct);
+                if (body.Contains("vllm:", StringComparison.Ordinal)) serverKind = "vllm";
+                else if (body.Contains("llamacpp:", StringComparison.Ordinal)) serverKind = LlamaCpp;
+            }
+        }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
+
+        // Ollama-specific: only Ollama serves /api/version.
+        try
+        {
+            using var ares = await http.GetAsync($"{e}/api/version", ct);
+            if (ares.IsSuccessStatusCode)
+            {
+                var json = await ares.Content.ReadAsStringAsync(ct);
+                using var doc = JsonDocument.Parse(json);
+                if (doc.RootElement.TryGetProperty("version", out var v))
                 {
                     version = v.GetString();
                     serverKind = "ollama";
                 }
             }
         }
-        catch { }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
+
+        // llama.cpp definitive: server_props + /props (the latter carries the model).
+        try
+        {
+            using var pres = await http.GetAsync($"{e}/v1/internal/server_props", ct);
+            if (pres.IsSuccessStatusCode) serverKind = LlamaCpp;
+        }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
 
         try
         {
             using var pres = await http.GetAsync($"{e}/props", ct);
             if (pres.IsSuccessStatusCode)
             {
-                serverKind = "llama.cpp";
+                serverKind = LlamaCpp;
                 var json = await pres.Content.ReadAsStringAsync(ct);
                 using var doc = JsonDocument.Parse(json);
                 if (doc.RootElement.TryGetProperty("default_generation_settings", out var dgs)
@@ -84,12 +137,12 @@ public static class Inspector
                     loadedModel = m.GetString();
             }
         }
-        catch { }
+        catch { /* endpoint absent or unreachable; try the next signal */ }
 
         sw.Stop();
         var ok = status.HasValue && status.Value < 500;
         return new HealthResult(e, serverKind, ok, status, sw.ElapsedMilliseconds, version, loadedModel, uptime,
-            ok ? null : "no /health or /version response");
+            ok ? null : "no /health response");
     }
 
     public static async Task<ModelsResult?> ModelsAsync(HttpClient http, string endpoint, CancellationToken ct)
