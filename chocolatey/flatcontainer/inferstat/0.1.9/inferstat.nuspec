@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>inferstat</id>
+    <version>0.1.9</version>
+    <title>inferstat</title>
+    <authors>FactusConsulting</authors>
+    <owners>FactusConsulting</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <licenseUrl>https://github.com/FactusConsulting/inferstat/blob/main/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/FactusConsulting/inferstat</projectUrl>
+    <description>Agent-friendly CLI for inspecting llama.cpp / vLLM / Ollama inference servers. Detects server kind and version, lists loaded models with family and quantization detection, reports llama.cpp slot occupancy, and parses Prometheus /metrics to JSON. Colored output for humans, stable JSON for agents. Ships as a single self-contained executable.</description>
+    <summary>Agent-friendly CLI for inspecting llama.cpp / vLLM / Ollama inference servers.</summary>
+    <tags>llm cli inference ollama vllm llama-cpp metrics prometheus ai agent dotnet</tags>
+    <packageSourceUrl>https://github.com/FactusConsulting/inferstat</packageSourceUrl>
+  </metadata>
+</package>
