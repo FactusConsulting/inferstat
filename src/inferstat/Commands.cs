@@ -36,7 +36,7 @@ public class EndpointSettings : GlobalSettings
 
 public sealed class HealthCommand : AsyncCommand<EndpointSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext ctx, EndpointSettings s)
+    protected override async Task<int> ExecuteAsync(CommandContext ctx, EndpointSettings s, CancellationToken cancellationToken)
     {
         s.ApplyToRender();
         using var http = Inspector.CreateClient(s.ResolvedApiKey(), s.Timeout);
@@ -48,7 +48,7 @@ public sealed class HealthCommand : AsyncCommand<EndpointSettings>
 
 public sealed class ModelsCommand : AsyncCommand<EndpointSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext ctx, EndpointSettings s)
+    protected override async Task<int> ExecuteAsync(CommandContext ctx, EndpointSettings s, CancellationToken cancellationToken)
     {
         s.ApplyToRender();
         using var http = Inspector.CreateClient(s.ResolvedApiKey(), s.Timeout);
@@ -61,7 +61,7 @@ public sealed class ModelsCommand : AsyncCommand<EndpointSettings>
 
 public sealed class SlotsCommand : AsyncCommand<EndpointSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext ctx, EndpointSettings s)
+    protected override async Task<int> ExecuteAsync(CommandContext ctx, EndpointSettings s, CancellationToken cancellationToken)
     {
         s.ApplyToRender();
         using var http = Inspector.CreateClient(s.ResolvedApiKey(), s.Timeout);
@@ -86,7 +86,7 @@ public sealed class SlotsCommand : AsyncCommand<EndpointSettings>
 
 public sealed class MetricsCommand : AsyncCommand<EndpointSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext ctx, EndpointSettings s)
+    protected override async Task<int> ExecuteAsync(CommandContext ctx, EndpointSettings s, CancellationToken cancellationToken)
     {
         s.ApplyToRender();
         using var http = Inspector.CreateClient(s.ResolvedApiKey(), s.Timeout);
@@ -153,7 +153,7 @@ public static class AgentGuidance
 
 public sealed class HelpAiCommand : Command
 {
-    public override int Execute(CommandContext ctx)
+    protected override int Execute(CommandContext ctx, CancellationToken cancellationToken)
     {
         Console.WriteLine(AgentGuidance.Text);
         return 0;
