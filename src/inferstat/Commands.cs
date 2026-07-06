@@ -40,7 +40,7 @@ public sealed class HealthCommand : AsyncCommand<EndpointSettings>
     {
         s.ApplyToRender();
         using var http = Inspector.CreateClient(s.ResolvedApiKey(), s.Timeout);
-        var r = await Inspector.HealthAsync(http, s.Endpoint, default);
+        var r = await Inspector.HealthAsync(http, s.Endpoint, cancellationToken);
         Render.Health(r);
         return r.Ok ? 0 : 74;
     }
@@ -52,7 +52,7 @@ public sealed class ModelsCommand : AsyncCommand<EndpointSettings>
     {
         s.ApplyToRender();
         using var http = Inspector.CreateClient(s.ResolvedApiKey(), s.Timeout);
-        var r = await Inspector.ModelsAsync(http, s.Endpoint, default);
+        var r = await Inspector.ModelsAsync(http, s.Endpoint, cancellationToken);
         if (r == null) { Render.Error("models endpoint unreachable or non-200", $"Try: inferstat health {s.Endpoint}"); return 74; }
         Render.Models(r);
         return 0;
@@ -65,7 +65,7 @@ public sealed class SlotsCommand : AsyncCommand<EndpointSettings>
     {
         s.ApplyToRender();
         using var http = Inspector.CreateClient(s.ResolvedApiKey(), s.Timeout);
-        var (r, status) = await Inspector.SlotsAsync(http, s.Endpoint, default);
+        var (r, status) = await Inspector.SlotsAsync(http, s.Endpoint, cancellationToken);
         if (r == null)
         {
             if (status == 401 || status == 403)
@@ -90,7 +90,7 @@ public sealed class MetricsCommand : AsyncCommand<EndpointSettings>
     {
         s.ApplyToRender();
         using var http = Inspector.CreateClient(s.ResolvedApiKey(), s.Timeout);
-        var (r, status) = await Inspector.MetricsAsync(http, s.Endpoint, default);
+        var (r, status) = await Inspector.MetricsAsync(http, s.Endpoint, cancellationToken);
         if (r == null)
         {
             if (status == 401 || status == 403)
