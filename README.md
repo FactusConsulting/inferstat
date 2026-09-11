@@ -20,7 +20,7 @@ inferstat help-ai                           # guidance for AI agents
 
 ## Install
 
-### Homebrew (macOS / Linux)
+### Homebrew (Linux)
 
 ```sh
 brew tap factusconsulting/tap
@@ -44,7 +44,7 @@ single self-contained `inferstat.exe` and shims it onto your `PATH`.
 
 ### Prebuilt binaries
 
-Download single-file AOT-compiled binaries from [Releases](https://github.com/FactusConsulting/inferstat/releases) — Linux x64/arm64, macOS x64/arm64, Windows x64. No runtime required.
+Download single-file AOT-compiled binaries from [Releases](https://github.com/FactusConsulting/inferstat/releases) — Linux x64/arm64 and Windows x64. No runtime required. macOS is not built: the binaries are self-contained, so a Mac would need one of its own, and nothing here runs macOS.
 
 ### Build from source
 
